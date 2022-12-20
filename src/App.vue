@@ -1,14 +1,14 @@
 <template>
-  <div id="app"><Message /></div>
+  <div id="app"><Chat /></div>
 </template>
 
 <script>
-import Message from "../src/components/message/Message.vue";
+import Chat from "./components/chat/Chat.vue";
 
 export default {
   name: "App",
   components: {
-    Message,
+    Chat,
   },
 };
 </script>
