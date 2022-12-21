@@ -1,59 +1,74 @@
 <template>
-  <div>
-    <div class="container" id="app">
-      <div class="col-md-4 col-lg-6 offset-lg-3 offset-md-4">
-        <div v-if="ready">
-          <h4>{{ name }}</h4>
-        </div>
-        <form @submit.prevent="setName" class="mt-4" v-else>
-          <div class="form-group row">
-            <label>Set Your Name First</label>
-            <input
-              type="text"
-              class="form-control col-9"
-              v-model="name"
-              placeholder="Type Here"
-            />
-            <input
-              type="submit"
-              value="Add"
-              class="btn btn-sm btn-info ml-1 col-2"
-            />
-          </div>
-        </form>
-        <div class="card bg-info" v-if="ready">
-          <div class="card-header text-white">
-            Sautomaid Chatroom
-            <span class="float-right"
-              >{{ connectionCount }} connections,
-              {{ online.length }} Online</span
-            >
-          </div>
+  <div class="container">
+    <div class="row clearfix">
+      <div class="col-lg-12">
+        <div class="card chat-app">
+          <div id="plist" class="people-list">
+            <div class="input-group">
+              <input type="text" class="form-control" v-model="name" />
+              <button @click="setName" class="btn btn">Join</button>
+            </div>
+            <div>Online: {{ online.length }}</div>
+            <b-alert show variant="success" v-for="inf in info" :key="inf">
+              {{ inf.name }} {{ inf.type }}
+            </b-alert>
 
-          <ul class="list-group list-group-flush text-right">
-            <small v-if="typing" class="text-white">
-              <i>{{ typing }} is typing...</i>
-            </small>
-            <li
-              class="list-group-item d-flex flex-row"
-              v-for="message in messages"
-              :key="message.type"
-            >
-              <Message :message="message" />
-            </li>
-          </ul>
-
-          <div class="card-body">
-            <form @submit.prevent="send">
-              <div class="form-group">
-                <input
-                  type="text"
-                  class="form-control"
-                  v-model="newmessage"
-                  placeholder="Type Here"
-                />
+            <!-- LEFT CHATS LIST -->
+            <ul class="list-unstyled chat-list mt-2 mb-0">
+              <li class="clearfix">
+                <img src="@/assets/user.jpg" alt="avatar" />
+                <div class="about">
+                  <div class="name">Doğukan Atalay</div>
+                </div>
+              </li>
+              <button @click="deleteAllMessages" class="btn btn-danger">
+                Delete all messages
+              </button>
+            </ul>
+            <!-- * * * * -->
+          </div>
+          <div class="chat">
+            <div class="chat-header clearfix">
+              <div class="row">
+                <div class="col-lg-6">
+                  <a
+                    href="javascript:void(0);"
+                    data-toggle="modal"
+                    data-target="#view_info"
+                  >
+                    <img src="@/assets/user.jpg" alt="avatar" />
+                  </a>
+                  <div class="chat-about">
+                    <h6 class="m-b-0">Lionel Messi</h6>
+                    <small v-if="typing">{{ typing }} typing...</small>
+                  </div>
+                </div>
               </div>
-            </form>
+            </div>
+            <div class="chat-history">
+              <ul class="m-b-0">
+                <!-- MESSAGES -->
+                <li
+                  class="clearfix"
+                  v-for="message in messages"
+                  :key="message.type"
+                >
+                  <Message :message="message" />
+                </li>
+              </ul>
+            </div>
+            <div class="chat-message clearfix">
+              <form @submit.prevent="send">
+                <div class="input-group mb-0">
+                  <input
+                    type="text"
+                    class="form-control"
+                    placeholder="Enter text here..."
+                    v-model="newmessage"
+                  />
+                </div>
+              </form>
+            </div>
           </div>
         </div>
       </div>
@@ -64,6 +79,7 @@
 <script>
 import io from "socket.io-client";
 import Message from "../../components/chat/message/Message.vue";
+import axios from "axios";
 
 export default {
   name: "ChatComponent",
@@ -77,7 +93,6 @@ export default {
       typing: false,
       online: [],
       name: null,
-      ready: false,
       info: [],
       connectionCount: 0,
     };
@@ -96,7 +111,19 @@ export default {
     },
     setName() {
       this.socketInstance.emit("joined", this.name);
-      this.ready = true;
+      this.online.push(name);
+    },
+    getPastMessages() {
+      axios.get(`${process.env.VUE_APP_BASE_URL}/chat`).then((res) => {
+        this.messages = res.data.data;
+      });
+    },
+    deleteAllMessages() {
+      axios
+        .delete(`${process.env.VUE_APP_BASE_URL}/chat/deleteAll`)
+        .then((res) => {
+          console.log(res);
+        });
     },
   },
   mounted() {
@@ -117,6 +144,7 @@ export default {
   created() {
     this.socketInstance = io(process.env.VUE_APP_BASE_URL);
 
+    this.getPastMessages();
     this.socketInstance.on("chat-message", (data) => {
       this.messages.push({ message: data.message, type: 1, by: data.user });
       this.typing = false;
@@ -134,7 +162,7 @@ export default {
       this.info.push({ name: name, type: "Leaved" });
       setTimeout(() => {
         this.info = [];
-      }, 5000);
+      }, 4000);
     });
 
     this.socketInstance.on("joined", (name) => {
@@ -142,10 +170,12 @@ export default {
       this.info.push({ name: name, type: "Joined" });
       setTimeout(() => {
         this.info = [];
-      }, 5000);
+      }, 4000);
     });
   },
 };
 </script>
 
-<style lang="scss" scoped></style>
+<style lang="scss" scoped>
+@import "@/assets/main.scss";
+</style>
